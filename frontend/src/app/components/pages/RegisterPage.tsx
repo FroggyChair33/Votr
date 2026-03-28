@@ -15,6 +15,7 @@ export function RegisterPage() {
     state: '',
     city: '',
     zip_code: '',
+    university: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -41,13 +42,13 @@ export function RegisterPage() {
   const field = (
     label: string,
     key: keyof typeof form,
-    opts?: { type?: string; placeholder?: string },
+    opts?: { type?: string; placeholder?: string; required?: boolean },
   ) => (
     <div className="flex flex-col gap-1.5">
       <label className="text-sm font-medium text-muted-foreground">{label}</label>
       <input
         type={opts?.type ?? 'text'}
-        required
+        required={opts?.required ?? true}
         value={form[key]}
         onChange={set(key)}
         placeholder={opts?.placeholder ?? ''}
@@ -112,6 +113,7 @@ export function RegisterPage() {
             </div>
 
             {field('ZIP Code', 'zip_code', { placeholder: '30601' })}
+            {field('University', 'university', { placeholder: 'University of Georgia', required: false })}
 
             <button
               type="submit"

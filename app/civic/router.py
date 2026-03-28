@@ -12,7 +12,7 @@ from app.auth.dependencies import get_current_user
 router = APIRouter(prefix="/civic", tags=["civic"])
 
 VOTERINFO_URL = "https://www.googleapis.com/civicinfo/v2/voterinfo"
-REPRESENTATIVES_URL = "https://www.googleapis.com/civicinfo/v2/representatives"
+ELECTIONS_URL = "https://www.googleapis.com/civicinfo/v2/elections"
 
 
 class CivicCandidate(BaseModel):
@@ -64,36 +64,14 @@ def _parse_voterinfo(data: dict, zip_code: str) -> CivicResponse:
     )
 
 
-def _parse_representatives(data: dict, zip_code: str) -> CivicResponse:
-    offices = {o["name"]: o for o in data.get("offices", [])}
-    officials = data.get("officials", [])
-
-    # Build office → officials mapping via index
-    contests = []
-    for office_name, office in offices.items():
-        indices = office.get("officialIndices", [])
-        candidates = []
-        for idx in indices:
-            if idx < len(officials):
-                o = officials[idx]
-                candidates.append(CivicCandidate(
-                    name=o.get("name", ""),
-                    party=o.get("party"),
-                    candidate_url=next(iter(o.get("urls", [])), None),
-                    photo_url=o.get("photoUrl"),
-                ))
-        if candidates:
-            contests.append(CivicContest(
-                office=office_name,
-                level=office.get("levels", []),
-                candidates=candidates,
-            ))
-
-    return CivicResponse(
-        zip_code=zip_code,
-        source="representatives",
-        contests=contests,
-    )
+def _google_error_detail(resp: http.Response) -> str:
+    try:
+        msg = resp.json().get("error", {}).get("message", "")
+        if msg:
+            return msg
+    except Exception:
+        pass
+    return f"Google Civic API returned HTTP {resp.status_code}."
 
 
 @router.get("/candidates", response_model=CivicResponse)
@@ -109,21 +87,39 @@ def get_local_candidates(
             detail="No ZIP code provided and none saved on your profile.",
         )
 
-    params = {"address": address, "key": GOOGLE_CIVIC_API_KEY}
-
-    # Try voterinfo first (candidates running in upcoming elections)
-    resp = http.get(VOTERINFO_URL, params=params, timeout=10)
-    if resp.status_code == 200:
-        data = resp.json()
-        if data.get("contests"):
-            return _parse_voterinfo(data, address)
-
-    # Fall back to current representatives for the area
-    resp = http.get(REPRESENTATIVES_URL, params=params, timeout=10)
-    if resp.status_code != 200:
+    if not GOOGLE_CIVIC_API_KEY:
         raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail="Google Civic API returned an error. Check the ZIP code and try again.",
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google Civic API key is not configured on the server.",
         )
 
-    return _parse_representatives(resp.json(), address)
+    # Fetch all upcoming elections, then try voterinfo for each one against this address.
+    # The representatives endpoint is deprecated by Google and returns 404.
+    elections_resp = http.get(ELECTIONS_URL, params={"key": GOOGLE_CIVIC_API_KEY}, timeout=10)
+    if elections_resp.status_code != 200:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=_google_error_detail(elections_resp),
+        )
+
+    elections = [
+        e for e in elections_resp.json().get("elections", [])
+        if e.get("id") != "2000"  # exclude the permanent VIP test election
+    ]
+
+    for election in elections:
+        params = {"address": address, "electionId": election["id"], "key": GOOGLE_CIVIC_API_KEY}
+        resp = http.get(VOTERINFO_URL, params=params, timeout=10)
+        if resp.status_code == 200:
+            data = resp.json()
+            if data.get("contests"):
+                return _parse_voterinfo(data, address)
+        elif resp.status_code not in (400, 404):
+            # Surface hard errors (403, 429, 5xx) immediately
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail=_google_error_detail(resp),
+            )
+
+    # No elections found for this address — return empty rather than erroring
+    return CivicResponse(zip_code=address, source="voterinfo", contests=[])

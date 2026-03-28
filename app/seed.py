@@ -51,4 +51,5 @@ def seed_db(db: Session) -> None:
 
 
 def generate_verification_key() -> str:
-    return secrets.token_urlsafe(8)
+    # token_urlsafe(12) encodes 12 bytes as URL-safe base64 → exactly 16 characters
+    return secrets.token_urlsafe(12)

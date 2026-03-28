@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, VoteVerification
+from app.models import User, VoteVerification, UniversityVotes
 from app.schemas import UserCreate, UserUpdate, UserOut
 from app.auth.utils import (
     hash_password,
@@ -64,6 +64,7 @@ def register(payload: UserCreate, response: Response, db: Session = Depends(get_
         state=payload.state,
         city=payload.city,
         zip_code=payload.zip_code,
+        university=payload.university,
     )
     db.add(user)
     db.flush()
@@ -73,6 +74,13 @@ def register(payload: UserCreate, response: Response, db: Session = Depends(get_
         verification_key=generate_verification_key(),
     )
     db.add(verification)
+
+    # Upsert the university into university_votes so it appears on the leaderboard
+    if payload.university:
+        uv = db.query(UniversityVotes).filter(UniversityVotes.name == payload.university).first()
+        if not uv:
+            db.add(UniversityVotes(name=payload.university, vote_count=0))
+
     db.commit()
     db.refresh(user)
 
@@ -145,3 +153,12 @@ def update_me(
     db.commit()
     db.refresh(current_user)
     return _build_user_out(current_user, db)
+
+
+@router.delete("/users", status_code=status.HTTP_204_NO_CONTENT)
+def clear_users(db: Session = Depends(get_db)):
+    """Delete all users and reset university vote counts. For development use."""
+    db.query(VoteVerification).delete()
+    db.query(User).delete()
+    db.query(UniversityVotes).update({UniversityVotes.vote_count: 0})
+    db.commit()

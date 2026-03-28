@@ -33,7 +33,7 @@ const voteSteps: VoteStep[] = [
     icon: <CheckCircle className="w-12 h-12" />,
     text: "Make sure you're registered before the deadline.",
     ctaText: 'Check Status',
-    ctaAction: () => console.log('Check registration status'),
+    ctaAction: () => window.open('https://mvp.sos.ga.gov/', '_blank', 'noopener,noreferrer'),
   },
   {
     id: 2,

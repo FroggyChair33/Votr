@@ -23,6 +23,7 @@ export interface RegisterPayload {
   state: string;
   city: string;
   zip_code: string;
+  university?: string;
 }
 
 export const getMe = () => request<User>('GET', '/auth/me');
@@ -38,6 +39,8 @@ export const register = (payload: RegisterPayload) =>
   request<User>('POST', '/auth/register', payload as unknown as Record<string, unknown>);
 
 export const logout = () => request<void>('POST', '/auth/logout');
+
+export const clearUsers = () => request<void>('DELETE', '/auth/users');
 
 export const updateMe = (payload: Partial<Omit<User, 'id' | 'has_voted' | 'vote_count' | 'verification_key'>>) =>
   request<User>('PATCH', '/auth/me', payload as Record<string, unknown>);

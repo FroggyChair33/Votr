@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { Card, CardContent } from "../ui/card";
 import { Users, Calendar, Building2, MapPin, Info } from "lucide-react";
 import { HowToVoteGuide } from "../HowToVoteGuide";
@@ -10,6 +11,7 @@ const resources = [
     description: "Learn about all candidates running in upcoming elections",
     icon: Users,
     color: "bg-blue-500",
+    path: "/candidate-information",
   },
   {
     id: 2,
@@ -17,6 +19,7 @@ const resources = [
     description: "View dates and details for all upcoming elections",
     icon: Calendar,
     color: "bg-purple-500",
+    path: "/upcoming-elections",
   },
   {
     id: 3,
@@ -24,6 +27,7 @@ const resources = [
     description: "Find resources and support on your campus",
     icon: Building2,
     color: "bg-green-500",
+    path: "/campus-resources",
   },
   {
     id: 4,
@@ -31,6 +35,7 @@ const resources = [
     description: "Locate nearby polling stations and voting centers",
     icon: MapPin,
     color: "bg-red-500",
+    path: null,
   },
   {
     id: 5,
@@ -38,18 +43,21 @@ const resources = [
     description: "Step-by-step guide to voting in your area",
     icon: Info,
     color: "bg-orange-500",
+    path: "/vote-guide",
   },
 ];
 
 export function ResourcesPage() {
+  const navigate = useNavigate();
   const [showVoteGuide, setShowVoteGuide] = useState(false);
 
-  const handleResourceClick = (resourceId: number) => {
-    if (resourceId === 5) {
-      // How to Vote card
-      setShowVoteGuide(true);
-    } else {
-      console.log("Resource clicked:", resourceId);
+  const handleResourceClick = (resource: typeof resources[number]) => {
+    if (resource.id === 4) {
+      // Polling Stations — no dedicated page, show inline (future feature)
+      return;
+    }
+    if (resource.path) {
+      navigate(resource.path);
     }
   };
 
@@ -73,7 +81,7 @@ export function ResourcesPage() {
               <Card
                 key={resource.id}
                 className="hover:shadow-lg transition-shadow cursor-pointer"
-                onClick={() => handleResourceClick(resource.id)}
+                onClick={() => handleResourceClick(resource)}
               >
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">

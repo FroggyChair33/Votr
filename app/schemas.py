@@ -10,6 +10,7 @@ class UserCreate(BaseModel):
     state: str
     city: str
     zip_code: str
+    university: Optional[str] = None
 
 
 class UserUpdate(BaseModel):
@@ -79,3 +80,13 @@ class VerifyResponse(BaseModel):
     success: bool
     message: str
     vote_count: int
+    university: Optional[str] = None
+    university_vote_count: Optional[int] = None
+
+
+class UniversityVotesOut(BaseModel):
+    id: int
+    name: str
+    vote_count: int
+
+    model_config = {"from_attributes": True}

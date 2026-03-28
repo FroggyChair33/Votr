@@ -65,3 +65,11 @@ class VoteVerification(Base):
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, unique=True)
     verification_key = Column(String, nullable=False, unique=True)
     used = Column(Boolean, default=False, nullable=False)
+
+
+class UniversityVotes(Base):
+    __tablename__ = "university_votes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String, nullable=False, unique=True)
+    vote_count = Column(Integer, default=0, nullable=False)

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import User, VoteVerification
+from app.models import User, VoteVerification, UniversityVotes
 from app.schemas import VerifyRequest, VerifyResponse
 from app.auth.dependencies import get_current_user
 
@@ -31,6 +31,16 @@ def verify_vote(
     record.used = True
     current_user.has_voted = True
     current_user.vote_count += 1
+
+    university_vote_count = None
+    if current_user.university:
+        uv = db.query(UniversityVotes).filter(
+            UniversityVotes.name == current_user.university
+        ).first()
+        if uv:
+            uv.vote_count += 1
+            university_vote_count = uv.vote_count
+
     db.commit()
     db.refresh(current_user)
 
@@ -38,6 +48,8 @@ def verify_vote(
         success=True,
         message="Vote verified successfully",
         vote_count=current_user.vote_count,
+        university=current_user.university,
+        university_vote_count=university_vote_count,
     )
 
 
