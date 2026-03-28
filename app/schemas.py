@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from uuid import UUID
 from typing import Optional
+from datetime import datetime
 
 
 class UserCreate(BaseModel):
@@ -39,6 +40,7 @@ class UserOut(BaseModel):
     has_voted: bool = False
     vote_count: int = 0
     verification_key: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     model_config = {"from_attributes": True}
 

@@ -1,16 +1,18 @@
 import { Share2, Edit, Award, Calendar, CheckCircle, X, Upload, Camera } from 'lucide-react';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { useState } from 'react';
+import { useAuth } from '../../context/AuthContext';
 
 export function ProfileTab() {
+  const { user } = useAuth();
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [profileData, setProfileData] = useState({
-    name: 'Alex Rivera',
-    university: 'University of Georgia',
-    email: 'alex.rivera@uga.edu',
-    bio: 'Passionate about civic engagement and making a difference!',
-    graduationYear: '2026',
-    major: 'Political Science',
+    name: user?.username ?? '',
+    university: user?.university ?? '',
+    email: user?.email ?? '',
+    bio: user?.bio ?? '',
+    graduationYear: user?.graduation_year ?? '',
+    major: user?.major ?? '',
     profileImage: 'https://images.unsplash.com/photo-1655977237812-ee6beb137203?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxjb2xsZWdlJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDF8fHx8MTc3NDcwMTQ4OXww&ixlib=rb-4.1.0&q=80&w=1080',
   });
 
@@ -53,13 +55,13 @@ export function ProfileTab() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         <div className="p-6 rounded-2xl bg-card border border-border text-center">
           <div className="flex justify-center mb-2">
             <Award className="w-8 h-8 text-primary" />
           </div>
           <p className="text-4xl mb-1" style={{ fontFamily: 'var(--font-header)', fontWeight: 700 }}>
-            8
+            {user?.vote_count ?? 0}
           </p>
           <p className="text-sm text-muted-foreground">Votes Cast</p>
         </div>
@@ -68,42 +70,9 @@ export function ProfileTab() {
             <Calendar className="w-8 h-8 text-primary" />
           </div>
           <p className="text-4xl mb-1" style={{ fontFamily: 'var(--font-header)', fontWeight: 700 }}>
-            2022
+            {user?.created_at ? new Date(user.created_at).getFullYear() : '—'}
           </p>
           <p className="text-sm text-muted-foreground">Year Joined</p>
-        </div>
-        <div className="p-6 rounded-2xl bg-card border border-border text-center">
-          <div className="flex justify-center mb-2">
-            <CheckCircle className="w-8 h-8 text-accent" />
-          </div>
-          <p className="text-4xl mb-1" style={{ fontFamily: 'var(--font-header)', fontWeight: 700 }}>
-            3
-          </p>
-          <p className="text-sm text-muted-foreground">Badges Earned</p>
-        </div>
-        <div className="p-6 rounded-2xl bg-card border border-border text-center">
-          <div className="flex justify-center mb-2">
-            <Award className="w-8 h-8 text-accent" />
-          </div>
-          <p className="text-4xl mb-1" style={{ fontFamily: 'var(--font-header)', fontWeight: 700 }}>
-            87%
-          </p>
-          <p className="text-sm text-muted-foreground">Participation</p>
-        </div>
-      </div>
-
-      {/* I Voted Badges */}
-      <div>
-        <h2 className="text-2xl mb-4" style={{ fontFamily: 'var(--font-header)', fontWeight: 600 }}>
-          My Badges
-        </h2>
-        <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-          <VoteBadge year="2024" />
-          <VoteBadge year="2023" />
-          <VoteBadge year="2022" />
-          <VoteBadge year="2026" locked />
-          <VoteBadge year="2027" locked />
-          <VoteBadge year="2028" locked />
         </div>
       </div>
 
@@ -122,26 +91,6 @@ export function ProfileTab() {
   );
 }
 
-function VoteBadge({ year, locked = false }: { year: string; locked?: boolean }) {
-  return (
-    <div
-      className={`aspect-square rounded-2xl flex flex-col items-center justify-center p-3 ${
-        locked ? 'bg-secondary opacity-50' : 'bg-gradient-to-br from-primary to-accent'
-      }`}
-    >
-      <CheckCircle className={`w-8 h-8 mb-2 ${locked ? 'text-muted-foreground' : 'text-white'}`} />
-      <span
-        className={`text-sm ${locked ? 'text-muted-foreground' : 'text-white'}`}
-        style={{ fontFamily: 'var(--font-header)', fontWeight: 700 }}
-      >
-        {year}
-      </span>
-      <span className={`text-xs ${locked ? 'text-muted-foreground' : 'text-white/90'}`}>
-        {locked ? 'Locked' : 'I Voted'}
-      </span>
-    </div>
-  );
-}
 
 function EditProfileModal({ profileData, onClose, onSave }: { profileData: any; onClose: () => void; onSave: (updatedData: any) => void }) {
   const [updatedProfileData, setUpdatedProfileData] = useState(profileData);

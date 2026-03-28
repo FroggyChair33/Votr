@@ -14,6 +14,7 @@ export interface User {
   has_voted: boolean;
   vote_count: number;
   verification_key?: string;
+  created_at?: string;
 }
 
 export interface RegisterPayload {
