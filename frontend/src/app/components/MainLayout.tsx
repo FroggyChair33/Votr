@@ -1,18 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useLocation, Outlet, useNavigate } from 'react-router';
-import { Home, Trophy, User, BookOpen, Shield } from 'lucide-react';
+import { Home, Trophy, User, BookOpen, Shield, LogOut } from 'lucide-react';
 import { HomeTab } from './tabs/HomeTab';
 import { LeaderboardTab } from './tabs/LeaderboardTab';
 import { ProfileTab } from './tabs/ProfileTab';
 import { ResourcesTab } from './tabs/ResourcesTab';
 import { VerificationTab } from './tabs/VerificationTab';
 import { ThemeToggle } from './ThemeToggle';
+import { useAuth } from '../context/AuthContext';
 
 type TabType = 'home' | 'leaderboard' | 'profile' | 'resources' | 'verification';
 
 export function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { logout } = useAuth();
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/landing', { replace: true });
+  };
   const [activeTab, setActiveTab] = useState<TabType>('home');
 
   // Determine if we're on a child route (not home)
@@ -116,7 +123,16 @@ export function MainLayout() {
               onClick={() => handleTabClick('profile')}
             />
           </nav>
-          <ThemeToggle />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              title="Sign out"
+            >
+              <LogOut className="w-5 h-5" />
+            </button>
+          </div>
         </div>
       </header>
 
